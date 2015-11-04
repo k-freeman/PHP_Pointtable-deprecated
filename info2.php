@@ -1,20 +1,21 @@
 <h2>Punkteabfrage</h2><br />
+<div class="shadow-z-1 infobox">
 <form action="" method="get">
 <div class="form-group">
-    <input class="form-control floating-label" id="focusedInput" maxlength="10" type="number" name="mat" placeholder="Bitte Matrikelnummer eingeben">
-<input type="hidden" name="p" value="info1">
+    <input class="form-control floating-label" id="focusedInput" maxlength="10" name="mat" placeholder="Bitte Pseudonym eingeben"><!--type="number"-->
+<input type="hidden" name="p" value="info2">
 <input class="btn btn-info" type="submit" value="Absenden ">
 </div>
 </form>
 <br />
 <?php
-$filename = 'info1/info1.dat';
+$filename = 'info2/info2.dat';
 
-if (!(isset($_GET['mat']) && ($_GET['mat'])!="" && strlen($_GET['mat'])<11))
+if (!(isset($_GET['mat']) && ($_GET['mat'])!="" && strlen($_GET['mat'])<16))
 {
-	$_GET['mat']=123456;
+	$_GET['mat']="Bsp";
 }
-if (isset($_GET['mat']) && ($_GET['mat'])!="" && strlen($_GET['mat'])<11)
+if (isset($_GET['mat']) && ($_GET['mat'])!="" && strlen($_GET['mat'])<16)
 {
 
 //my own function to calculate a gradient
@@ -59,7 +60,9 @@ function findID($key,$row_data)
 	foreach($row_data as $k => $entry)
 	{
 		if ($entry==$key)
+		{
 			return $k;
+		}
 	}
 	return -1;
 }
@@ -69,16 +72,19 @@ $txt_file    = file_get_contents($filename);
 $rows        = explode("\n", $txt_file);
 if (isset($_GET['mat']))
 {
+	$totalpoints=array();
 	$mat=$_GET['mat'];
 	$found=0;
 	$totalexercises=0;
 	
 	$firstrow=array_shift($rows); // move out first line
 	$secondrow=array_pop($rows); // move out last line
-	//$entryrow=array_pop($rows); // move out last line (entries in here (n))
+	$meanrow=array_pop($rows); // move out last line (MEAN)
 	$secondrow=array_pop($rows); // move out last line (points here)
-	$firstrow_data = explode(';', $firstrow);
-	$secondrow_data = explode(';', $secondrow);
+	$firstrow_data = explode(',', $firstrow);
+	$secondrow_data = explode(',', $secondrow);
+	$meanrow_data = explode(',', $meanrow);
+	
 	foreach($firstrow_data as $k => $entry)
 	{
 		$e_arr=explode('_', $entry);
@@ -93,18 +99,20 @@ if (isset($_GET['mat']))
 		{
 			
 			//get row data
-			$row_data = explode(';', $data);
+			$row_data = explode(',', $data);
 
-			$info[$row]['MNr'] = $row_data[0];
-			if ($mat==$info[$row]['MNr'])
+			$info[$row]['Pseudonym'] = $row_data[0];
+			if ($mat==$info[$row]['Pseudonym'])
 			{
 				$found=1;
 				
 				echo "Abfrage für <b>".$mat."</b>:<br /><br />";
 				echo "<table class=\"table table-striped table-hover \">";
-				echo "<thead><tr class=\"info\"><th>Übung</th><th>Summe</th><th>Übungsblatt</th><th>Praktische Übung</th><th>Ilias</th><th>Lon Capa</th></tr></thead><tbody>";
+				echo "<thead><tr class=\"info\"><th>Übung</th><th>Summe</th><th>Übungsblatt</th><th>Ilias</th></tr></thead><tbody>";
 				
 				$totalsum=0;
+				$totalall=0; //counting the maxsum
+				//$totalilias=0;
 				$totalex=0;
 				for ($i=1;$i<=$totalexercises;$i++)
 				{
@@ -114,9 +122,10 @@ if (isset($_GET['mat']))
 					$ue=$i;
 					$i=$uebung;
 					//read out and avoid errors:
-					if (findID('U_'.$i,$firstrow_data) >= 0)
+					if (findID('UE_'.$i,$firstrow_data) >= 0)
 					{
-						$a1ID=findID('U_'.$i,$firstrow_data);
+					//echo "LOL AT: ".$i."<br>";
+						$a1ID=findID('UE_'.$i,$firstrow_data);
 						if ($row_data[$a1ID]!="")
 							$a1=$row_data[$a1ID];
 						if ($secondrow_data[$a1ID]!="")
@@ -153,31 +162,63 @@ if (isset($_GET['mat']))
 		
 					$sum	=$a1+$a2+$a3+$a4;
 					$total	=$a_m[0]+$a_m[1]+$a_m[2]+$a_m[3];
+					$totalall=$totalall+$total;
 					$totalsum	=$totalsum+$sum;
-									
+					$totalpoints[]=$sum;
 					if ($sum>0)
 					{
-						$totalex=$ue;
-						//$s="success";
-						//class='".$s."'
-						echo "<tr><td>".$uebung."</td><td style=\"font-weight: bold; background-color: rgb(".(col($sum,$total,0)).",".(col($sum,$total,1)).",".(col($sum,$total,2)).");\">".$sum."/".$total."</td><td style=\"background-color: rgb(".(col($a1,$a_m[0],0)).",".(col($a1,$a_m[0],1)).",".(col($a1,$a_m[0],2)).");\">".$a1."/".$a_m[0]."</td><td style=\"background-color: rgb(".(col($a2,$a_m[1],0)).",".(col($a2,$a_m[1],1)).",".(col($a2,$a_m[1],2)).");\">".$a2."/".$a_m[1]."</td><td style=\"background-color: rgb(".(col($a3,$a_m[2],0)).",".(col($a3,$a_m[2],1)).",".(col($a3,$a_m[2],2)).");\">".$a3."/".$a_m[2]."</td><td style=\"background-color: rgb(".(col($a4,$a_m[3],0)).",".(col($a4,$a_m[3],1)).",".(col($a4,$a_m[3],2)).");\">".$a4."/".$a_m[3]."</td></tr>";				
+						$totalex=$ue;				
+						echo "<tr><td>".$uebung."</td><td style=\"font-weight: bold; background-color: rgb(".(col($sum,$total,0)).",".(col($sum,$total,1)).",".(col($sum,$total,2)).");\">".$sum."/".$total."</td><td style=\"background-color: rgb(".(col($a1,$a_m[0],0)).",".(col($a1,$a_m[0],1)).",".(col($a1,$a_m[0],2)).");\">".$a1."/".$a_m[0]."</td><td style=\"background-color: rgb(".(col($a3,$a_m[2],0)).",".(col($a3,$a_m[2],1)).",".(col($a3,$a_m[2],2)).");\">".$a3."/".$a_m[2]."</td></tr>";				
 					}
 				}
 				
-				//echo "<tr style=\"outline: thin solid black;\"><td><b>&sum;</b></td><td>".($totalilias+$totalsum)."</td><td>".$totalilias."</td><td style='font-weight: bold;'>".$totalsum."/".$totalex." [".(round($totalsum*100.0/$totalex,2))."%]</td><td></td><td></td><td></td><td></td>";
-				echo "<tr><td><b>&sum;</b></td><td colspan=5 style='font-weight: bold;'>".$totalsum."/".($totalex*100)." [".(round($totalsum*1.0/$totalex,2))."%]
+				echo "<tr><td><b>&sum;</b></td><td colspan=3 style='font-weight: bold;'>".$totalsum."/".($totalall)." [".(round($totalsum*100.0/$totalall,2))."%]
 				
 				<div class=\"progress progress-striped active\">
-				<div class=\"progress-bar\" style=\"width: ".(round($totalsum*1.0/$totalex,2))."%\"></div>
+				<div class=\"progress-bar\" style=\"width: ".(round($totalsum*100.0/$totalall,2))."%\"></div>
 				</div>
 				
 				
 				</td>";
 				echo "</tbody></table>";
+				echo "<div id=\"plot\" style=\"height: 250px;\"></div>";
+				echo "<script>
+				new Morris.Line({
+				  element: 'plot',
+				  data: [
+				  ";
+				for ($i=0;$i<12;$i++)
+				{
+					$uebung=str_pad($i, 2, "0", STR_PAD_LEFT); //make it beautiful
+					if ($i<$totalexercises)
+					{
+						echo "{ y: '".$uebung."', a: ".$totalpoints[$i].", b: ".$meanrow_data[$i+1].", c: ".$secondrow_data[$i+1]." }";//".$meanrow_data[$i+1]."
+					}
+					else
+					{
+						echo "{ y: '".$uebung."', a: 0, b: 0, c:0 }";
+					}
+					if ($i!=11)
+						echo ",";
+				}
+				echo "
+				  ],
+				  xkey: 'y',
+				  ykeys: ['a', 'b'/*, 'c'*/],
+				  xLabelFormat: function (x) {  			return \"\";              },
+				  //dateFormat: function(x) { return new Date(x).toString();},
+				  dateFormat: function(x) { return \"Übung \"+(1+Math.floor((x+2208992400000)/31536000000));},
+				  labels: ['Punkte', 'Durchschnitt'/*, 'Erreichbare Punkte'*/],
+				  goals: [50],
+				  goalStrokeWidth: 5,
+				  goalLineColors: [\"#03F4A9\"],
+				  lineColors: [\"#03A9F4\",\"#C0C0C0\",\"#00FF00\"]
+				});</script>";
+				
 			}
 		}
 		if ($found==0)
-			echo "Matrikelnummer wurde <b>nicht</b> gefunden.<br />";
+			echo "Pseudonym wurde <b>nicht</b> gefunden.<br />";
 	}
 	else
 	{
@@ -186,7 +227,7 @@ if (isset($_GET['mat']))
     
 }
 else
-	echo "Keine Matrikelnummer eingegeben.<br />"; //not executed anymore
+	echo "Keine Pseudonym eingegeben.<br />"; //not executed anymore
 }
 	
 	echo "<br />";
@@ -198,3 +239,4 @@ else
 	echo "<br />";
 
 ?>
+</div>

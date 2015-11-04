@@ -1,6 +1,15 @@
 PHP_Pointtable
 ==============
 
+**Update:**
+
+Info1.php didn't change that much. It will search for corresponding lines etc automatically, depending on the first row in the .csv.
+
+Info2.php however, calculates the mean and use some bootstrap diagrams; can be seen in the source code. That's why there is an additional .py script, which calculates the mean. It's a bit old and that's why its crappy. Should be understandable when reviewing examplefiles.
+
+
+**Old:**
+
 This small site is good to display points (of e.g. exercises) correlated to a certain person (in this case 'Matrikelnummern' are used).
 Please open this readme in any plain file editor.
 
