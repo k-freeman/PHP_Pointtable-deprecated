@@ -1,6 +1,8 @@
 PHP_Pointtable
 ==============
 
+Note: this repository is deprecated and not being updated anymore.
+
 **Update:**
 
 Info1.php didn't change that much. It will search for corresponding lines etc automatically, depending on the first row in the .csv.
